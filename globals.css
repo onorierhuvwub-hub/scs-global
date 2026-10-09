@@ -1,0 +1,30 @@
+@import "tailwindcss";
+
+@layer base {
+  body {
+    @apply bg-slate-950 text-slate-100 antialiased font-sans selection:bg-amber-500 selection:text-slate-950;
+  }
+}
+
+/* Custom Leaflet Map styling overrides */
+.leaflet-container {
+  font-family: inherit !important;
+  background-color: #0B132B !important;
+}
+
+.custom-leaflet-icon, .custom-leaflet-vehicle {
+  background: transparent !important;
+  border: none !important;
+}
+
+@keyframes pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(212, 175, 55, 0.7);
+  }
+  70% {
+    box-shadow: 0 0 0 16px rgba(212, 175, 55, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(212, 175, 55, 0);
+  }
+}
