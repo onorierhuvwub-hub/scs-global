@@ -73,12 +73,12 @@ export async function registerCustomerAccount(
 ) {
   const normalizedEmail = email.trim().toLowerCase();
   if (!shipments.some((shipment) => emailMatchesShipment(normalizedEmail, shipment))) {
-    return { ok: false, error: 'No shipment is registered to that email. Check the email with your operations contact.' };
+    return { ok: false as const, error: 'No shipment is registered to that email. Check the email with your operations contact.' };
   }
 
   const accounts = readCustomerAccounts();
   if (accounts.some((account) => account.email.toLowerCase() === normalizedEmail)) {
-    return { ok: false, error: 'An account already exists for this email. Please sign in.' };
+    return { ok: false as const, error: 'An account already exists for this email. Please sign in.' };
   }
 
   const account = { name: name.trim(), email: normalizedEmail, passwordHash: await hashPassword(password) };
