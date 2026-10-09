@@ -91,7 +91,7 @@ export async function registerCustomerAccount(
 export async function signInCustomer(email: string, password: string) {
   const account = readCustomerAccounts().find((candidate) => candidate.email.toLowerCase() === email.trim().toLowerCase());
   if (!account || account.passwordHash !== await hashPassword(password)) {
-    return { ok: false, error: 'Email or password is incorrect.' };
+    return { ok: false as const, error: 'Email or password is incorrect.' };
   }
   const session = { name: account.name, email: account.email };
   localStorage.setItem(CUSTOMER_SESSION_KEY, JSON.stringify(session));
