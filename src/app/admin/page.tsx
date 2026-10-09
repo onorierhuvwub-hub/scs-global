@@ -3,7 +3,6 @@
 import { useEffect, useState } from 'react';
 import { useShipmentsStore, useUserStore, useGlobalSettings } from '@/lib/store';
 import { calculateQuote, formatCurrency, generateTrackingNumber } from '@/lib/tracking';
-import { DEMO_ADMIN_PASSWORD, DEMO_ADMIN_USERNAME, endAdminSession, hasAdminSession, startAdminSession } from '@/lib/auth';
 import { Shipment, ShipmentStatus, Incident } from '@/lib/types';
 import TrackingMap from '@/components/TrackingMap';
 import { 
@@ -34,7 +33,9 @@ import {
   FileText,
   UserX,
   QrCode,
-  LogOut
+  LogOut,
+  Copy,
+  ExternalLink
 } from 'lucide-react';
 
 const COUNTRY_COORDINATES: Record<string, [number, number]> = {
@@ -73,8 +74,11 @@ export default function AdminPage() {
   const [loginError, setLoginError] = useState('');
   const [shipmentForm, setShipmentForm] = useState(EMPTY_SHIPMENT_FORM);
   const [shipmentMessage, setShipmentMessage] = useState('');
+  const [registeredTrackingNumber, setRegisteredTrackingNumber] = useState('');
 
-  const [activeTab, setActiveTab] = useState<'fleet' | 'shipments' | 'incidents' | 'analytics' | 'scanner'>('fleet');
+  const [activeTab, setActiveTab] = useState<'fleet' | 'clients' | 'shipments' | 'incidents' | 'analytics' | 'scanner'>('fleet');
+  const [clientSearch, setClientSearch] = useState('');
+  const [copiedTrackingNumber, setCopiedTrackingNumber] = useState('');
   const [selectedShipmentTn, setSelectedShipmentTn] = useState<string>(shipments[0]?.trackingNumber || 'SCS-2026-0000000001');
 
   // Status edit modal state
@@ -88,25 +92,65 @@ export default function AdminPage() {
   const [scanResultMsg, setScanResultMsg] = useState('');
 
   useEffect(() => {
-    setIsAuthenticated(hasAdminSession());
+    let active = true;
+    fetch('/api/admin/session', { cache: 'no-store' })
+      .then((response) => response.json())
+      .then((result) => { if (active) setIsAuthenticated(result.authenticated === true); })
+      .catch(() => { if (active) setIsAuthenticated(false); });
+    return () => { active = false; };
   }, []);
 
   const activeShipment = shipments.find((s) => s.trackingNumber === selectedShipmentTn) || shipments[0];
 
+  const clients = Array.from(
+    shipments.reduce((map, shipment) => {
+      const key = shipment.customerEmail?.trim().toLowerCase() || shipment.customerName.trim().toLowerCase();
+      if (!key) return map;
+      const client = map.get(key) || {
+        name: shipment.customerName || shipment.sender.name,
+        email: shipment.customerEmail || shipment.sender.email,
+        phone: shipment.customerPhone || shipment.sender.phone,
+        shipments: [] as Shipment[],
+      };
+      client.shipments.push(shipment);
+      map.set(key, client);
+      return map;
+    }, new Map<string, { name: string; email: string; phone: string; shipments: Shipment[] }>()),
+    ([key, client]) => ({ key, ...client })
+  ).filter((client) =>
+    `${client.name} ${client.email} ${client.phone}`.toLowerCase().includes(clientSearch.trim().toLowerCase())
+  );
+
   const totalIncidents = shipments.reduce((acc, s) => acc + (s.incidents ? s.incidents.length : 0), 0);
   const activeFleetCount = 14;
 
-  function handleAdminLogin(e: React.FormEvent) {
+  async function handleAdminLogin(e: React.FormEvent) {
     e.preventDefault();
-    if (startAdminSession(loginUsername, loginPassword)) {
+    setLoginError('');
+    try {
+      const response = await fetch('/api/admin/session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username: loginUsername, password: loginPassword }),
+      });
+      const result = await response.json();
+      if (response.ok) {
       setIsAuthenticated(true);
-      setLoginError('');
-    } else {
-      setLoginError('Username or password is incorrect.');
+      setLoginPassword('');
+      } else {
+        setLoginError(result.error || 'Username or password is incorrect.');
+      }
+    } catch {
+      setLoginError('Unable to reach the sign-in service. Please try again.');
     }
   }
 
-  function handleRegisterShipment(e: React.FormEvent) {
+  async function handleAdminLogout() {
+    await fetch('/api/admin/session', { method: 'DELETE' }).catch(() => undefined);
+    setIsAuthenticated(false);
+  }
+
+  async function handleRegisterShipment(e: React.FormEvent) {
     e.preventDefault();
     const now = new Date().toISOString();
     const trackingNumber = generateTrackingNumber();
@@ -180,8 +224,41 @@ export default function AdminPage() {
       updatedAt: now,
     });
     setSelectedShipmentTn(trackingNumber);
-    setShipmentMessage(`Shipment registered. Tracking number: ${trackingNumber}`);
+    setShipmentMessage(`Shipment registered for ${shipmentForm.customerName}. Sending notification to ${recipient.email}…`);
+    setRegisteredTrackingNumber(trackingNumber);
     setShipmentForm(EMPTY_SHIPMENT_FORM);
+
+    try {
+      const response = await fetch('/api/shipments/notify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          recipientEmail: recipient.email,
+          recipientName: recipient.name,
+          trackingNumber,
+          origin: `${sender.city}, ${sender.country}`,
+          destination: `${recipient.city}, ${recipient.country}`,
+        }),
+      });
+      const result = await response.json();
+      if (response.ok) {
+        setShipmentMessage(`Shipment registered for ${shipmentForm.customerName}. Email notification sent to ${recipient.email}. Tracking number: ${trackingNumber}`);
+      } else {
+        setShipmentMessage(`Shipment registered. Email was not sent: ${result.error || 'email service unavailable'}`);
+      }
+    } catch {
+      setShipmentMessage('Shipment registered, but the email notification could not be sent. Check the server email configuration and try again.');
+    }
+  }
+
+  async function copyTrackingNumber(trackingNumber: string) {
+    try {
+      await navigator.clipboard.writeText(trackingNumber);
+      setCopiedTrackingNumber(trackingNumber);
+      window.setTimeout(() => setCopiedTrackingNumber(''), 1800);
+    } catch {
+      setShipmentMessage(`Tracking number: ${trackingNumber}`);
+    }
   }
 
   function handleUpdateStatusSubmit(e: React.FormEvent) {
@@ -233,10 +310,6 @@ export default function AdminPage() {
           </label>
           {loginError && <p role="alert" className="text-sm text-rose-300">{loginError}</p>}
           <button type="submit" className="w-full rounded-lg bg-amber-500 p-3 font-bold text-slate-950">Sign in securely</button>
-          <p className="rounded-lg border border-slate-800 bg-slate-950 p-3 text-xs text-slate-400">
-            Local demo access: <strong className="text-slate-200">{DEMO_ADMIN_USERNAME}</strong> / <strong className="text-slate-200">{DEMO_ADMIN_PASSWORD}</strong>
-          </p>
-          <p className="text-xs text-slate-500">This demo stores access state in this browser. Use server-side authentication before deployment.</p>
         </form>
       </main>
     );
@@ -275,6 +348,14 @@ export default function AdminPage() {
               Fleet Map
             </button>
             <button
+              onClick={() => setActiveTab('clients')}
+              className={`px-3 py-1.5 rounded-lg font-bold transition ${
+                activeTab === 'clients' ? 'bg-amber-500 text-slate-950' : 'bg-slate-950 text-slate-300 border border-slate-800'
+              }`}
+            >
+              Clients ({clients.length})
+            </button>
+            <button
               onClick={() => setActiveTab('shipments')}
               className={`px-3 py-1.5 rounded-lg font-bold transition ${
                 activeTab === 'shipments' ? 'bg-amber-500 text-slate-950' : 'bg-slate-950 text-slate-300 border border-slate-800'
@@ -307,11 +388,70 @@ export default function AdminPage() {
               Vault Scanner
             </button>
           </div>
-          <button onClick={() => { endAdminSession(); setIsAuthenticated(false); }} className="flex items-center gap-1.5 rounded-lg border border-slate-700 px-3 py-1.5 text-xs font-semibold text-slate-300 hover:border-amber-500 hover:text-amber-300">
+          <button onClick={() => void handleAdminLogout()} className="flex items-center gap-1.5 rounded-lg border border-slate-700 px-3 py-1.5 text-xs font-semibold text-slate-300 hover:border-amber-500 hover:text-amber-300">
             <LogOut className="w-3.5 h-3.5" /> Sign out
           </button>
         </div>
       </div>
+
+      {/* CLIENT DIRECTORY AND TRACKING PORTAL */}
+      {activeTab === 'clients' && (
+        <section className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-2xl space-y-5">
+          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 border-b border-slate-800 pb-4">
+            <div>
+              <h2 className="text-xl font-extrabold text-white">Client registry</h2>
+              <p className="text-sm text-slate-400 mt-1">Customer contact records and the tracking numbers assigned to their shipments.</p>
+            </div>
+            <button onClick={() => { setShipmentMessage(''); setActiveTab('shipments'); }} className="rounded-lg bg-amber-500 px-4 py-2 text-sm font-bold text-slate-950">
+              Register client shipment
+            </button>
+          </div>
+          <label className="block max-w-md text-xs text-slate-300">
+            Find a client
+            <span className="relative mt-1 block">
+              <Search className="absolute left-3 top-3 h-4 w-4 text-slate-500" />
+              <input value={clientSearch} onChange={(e) => setClientSearch(e.target.value)} placeholder="Name, email, or phone" className="w-full rounded-lg border border-slate-700 bg-slate-950 py-2.5 pl-9 pr-3 text-sm text-white" />
+            </span>
+          </label>
+          {clients.length === 0 ? (
+            <div className="rounded-xl border border-dashed border-slate-700 p-8 text-center text-sm text-slate-400">
+              No client records match this search. Register a shipment to add the customer to the registry.
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {clients.map((client) => (
+                <article key={client.key} className="rounded-xl border border-slate-800 bg-slate-950/70 p-4">
+                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-2">
+                    <div>
+                      <h3 className="font-bold text-white">{client.name}</h3>
+                      <p className="text-xs text-slate-400">{client.email} {client.phone && `· ${client.phone}`}</p>
+                    </div>
+                    <span className="text-xs text-amber-300">{client.shipments.length} shipment{client.shipments.length === 1 ? '' : 's'}</span>
+                  </div>
+                  <div className="mt-4 space-y-2">
+                    {client.shipments.map((shipment) => (
+                      <div key={shipment.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-lg border border-slate-800 px-3 py-3">
+                        <div className="min-w-0">
+                          <div className="font-mono text-sm font-bold text-amber-300">{shipment.trackingNumber}</div>
+                          <div className="text-xs text-slate-400">{shipment.sender.city}, {shipment.sender.country} → {shipment.recipient.city}, {shipment.recipient.country} · {shipment.currentStatus.replaceAll('_', ' ')}</div>
+                        </div>
+                        <div className="flex shrink-0 gap-2">
+                          <button type="button" onClick={() => void copyTrackingNumber(shipment.trackingNumber)} className="inline-flex items-center gap-1.5 rounded-md border border-slate-700 px-3 py-2 text-xs font-semibold text-slate-200 hover:border-amber-500">
+                            <Copy className="h-3.5 w-3.5" /> {copiedTrackingNumber === shipment.trackingNumber ? 'Copied' : 'Copy number'}
+                          </button>
+                          <a href={`/track?tn=${encodeURIComponent(shipment.trackingNumber)}`} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 rounded-md bg-amber-500 px-3 py-2 text-xs font-bold text-slate-950">
+                            Track <ExternalLink className="h-3.5 w-3.5" />
+                          </a>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </article>
+              ))}
+            </div>
+          )}
+        </section>
+      )}
 
       {/* Top Stat Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -379,6 +519,16 @@ export default function AdminPage() {
           {shipmentMessage && (
             <div role="status" className="rounded-xl border border-emerald-700 bg-emerald-950/60 p-4 text-sm text-emerald-200">
               {shipmentMessage}
+              {registeredTrackingNumber && (
+                <div className="mt-3 flex flex-wrap items-center gap-3">
+                  <button type="button" onClick={() => void copyTrackingNumber(registeredTrackingNumber)} className="inline-flex items-center gap-1.5 rounded-md border border-emerald-700 px-3 py-2 text-xs font-semibold hover:bg-emerald-900">
+                    <Copy className="h-3.5 w-3.5" /> {copiedTrackingNumber === registeredTrackingNumber ? 'Copied' : 'Copy tracking number'}
+                  </button>
+                  <a href={`/track?tn=${encodeURIComponent(registeredTrackingNumber)}`} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 rounded-md bg-emerald-400 px-3 py-2 text-xs font-bold text-slate-950">
+                    Open tracking page <ExternalLink className="h-3.5 w-3.5" />
+                  </a>
+                </div>
+              )}
             </div>
           )}
 
