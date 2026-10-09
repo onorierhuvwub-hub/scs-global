@@ -78,3 +78,18 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 ## 📄 License & Underwriting
 Protected by Sovereign Courier Security (SCS Global) Inc. All cargo underwritten by Lloyd's of London up to $500,000,000 per manifest.
+# Shipment email notifications
+
+Admin sign-in uses an HTTP-only server session. Configure the administrator credentials and a random session secret as server environment variables in `.env.local` for local development and in the deployment provider for production. Do not commit `.env.local` or put secrets in source code.
+
+- `SCS_ADMIN_USERNAME`: administrator username
+- `SCS_ADMIN_PASSWORD`: administrator password
+- `SCS_ADMIN_SESSION_SECRET`: random secret used to sign admin sessions
+
+Admin shipment registration also emails the recipient using Resend. Configure:
+
+- `RESEND_API_KEY`: a Resend API key
+- `RESEND_FROM_EMAIL`: a sender address on a domain verified with Resend
+- `NEXT_PUBLIC_APP_URL`: the public app URL used to build tracking links
+
+See `.env.example` for the expected format. Without the email settings, shipments are still registered, but the admin page reports that the notification was not sent.
