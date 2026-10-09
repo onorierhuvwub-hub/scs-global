@@ -1,5 +1,15 @@
 @import "tailwindcss";
 
+html {
+  min-height: 100%;
+  overflow-y: auto;
+  scroll-behavior: smooth;
+}
+
+body {
+  min-height: 100vh;
+}
+
 @layer base {
   body {
     @apply bg-slate-950 text-slate-100 antialiased font-sans selection:bg-amber-500 selection:text-slate-950;
