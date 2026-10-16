@@ -51,9 +51,13 @@ function emailMatchesShipment(email: string, shipment: Shipment) {
 
 export function readCustomerSession(): CustomerSession | null {
   try {
-    const stored = JSON.parse(localStorage.getItem(CUSTOMER_SESSION_KEY) || 'null') as (CustomerSession & { expiresAt?: number }) | null;
+    // Remove sessions created by older versions that persisted across browser restarts.
+    localStorage.removeItem(CUSTOMER_SESSION_KEY);
+    // Keep the signed-in session scoped to this browser tab. Closing the tab/app
+    // ends the session instead of restoring the previous customer's details later.
+    const stored = JSON.parse(sessionStorage.getItem(CUSTOMER_SESSION_KEY) || 'null') as (CustomerSession & { expiresAt?: number }) | null;
     if (!stored || typeof stored.expiresAt !== 'number' || stored.expiresAt <= Date.now()) {
-      localStorage.removeItem(CUSTOMER_SESSION_KEY);
+      sessionStorage.removeItem(CUSTOMER_SESSION_KEY);
       return null;
     }
     return { name: stored.name, email: stored.email };
@@ -64,9 +68,15 @@ export function readCustomerSession(): CustomerSession | null {
 
 export function endCustomerSession() {
   localStorage.removeItem(CUSTOMER_SESSION_KEY);
+  sessionStorage.removeItem(CUSTOMER_SESSION_KEY);
 }
 
-export async function registerCustomerAccount(name: string, email: string, password: string, shipments: Shipment[]) {
+export async function registerCustomerAccount(
+  name: string,
+  email: string,
+  password: string,
+  shipments: Shipment[],
+) {
   const normalizedEmail = email.trim().toLowerCase();
   if (!name.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail) || !isStrongCustomerPassword(password)) {
     return { ok: false as const, error: 'Use a valid email and a password with at least 12 characters, including uppercase, lowercase, and a number.' };
@@ -84,7 +94,7 @@ export async function registerCustomerAccount(name: string, email: string, passw
   const account = { name: name.trim(), email: normalizedEmail, salt, passwordHash: await hashPassword(password, salt) };
   localStorage.setItem(CUSTOMER_ACCOUNTS_KEY, JSON.stringify([...accounts, account]));
   const session = { name: account.name, email: account.email, expiresAt: Date.now() + CUSTOMER_SESSION_TTL_MS };
-  localStorage.setItem(CUSTOMER_SESSION_KEY, JSON.stringify(session));
+  sessionStorage.setItem(CUSTOMER_SESSION_KEY, JSON.stringify(session));
   return { ok: true, session } as const;
 }
 
@@ -103,6 +113,6 @@ export async function signInCustomer(email: string, password: string) {
     localStorage.setItem(CUSTOMER_ACCOUNTS_KEY, JSON.stringify(accounts));
   }
   const session = { name: account.name, email: account.email, expiresAt: Date.now() + CUSTOMER_SESSION_TTL_MS };
-  localStorage.setItem(CUSTOMER_SESSION_KEY, JSON.stringify(session));
+  sessionStorage.setItem(CUSTOMER_SESSION_KEY, JSON.stringify(session));
   return { ok: true, session } as const;
 }
