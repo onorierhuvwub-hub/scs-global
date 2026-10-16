@@ -59,7 +59,7 @@ export default function CustomerPortalPage() {
   const [dimensionsCm, setDimensionsCm] = useState('40x30x20');
   const [declaredValue, setDeclaredValue] = useState(1500000);
   const [specialHandling, setSpecialHandling] = useState<string[]>(['Tamper-Evident Seal', 'Dual Armed Escort']);
-  const [passcode, setPasscode] = useState('VIP2026');
+  const [passcode, setPasscode] = useState('');
   const [createdSuccessTn, setCreatedSuccessTn] = useState('');
 
   // Bulk CSV Upload State
@@ -618,13 +618,13 @@ export default function CustomerPortalPage() {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-slate-300 font-semibold mb-1">Tracking Passcode Protection</label>
+                  <label className="block text-slate-300 font-semibold mb-1">Shipment Tracking Passcode</label>
                   <input
                     type="text"
-                    value={passcode}
+                    required minLength={8} autoComplete="new-password" value={passcode}
                     onChange={(e) => setPasscode(e.target.value)}
                     className="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-white font-mono"
-                    placeholder="e.g. VIP2026"
+                    placeholder="Create a private passcode"
                   />
                 </div>
 
