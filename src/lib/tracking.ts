@@ -481,8 +481,8 @@ export const SEED_SHIPMENTS: Shipment[] = [
       isPaid: true,
     },
     
-    passwordProtected: true,
-    passcode: 'VIP2026',
+    passwordProtected: false,
+    passcode: '',
     estimatedDelivery: '2026-10-06T18:00:00Z',
     createdAt: '2026-10-05T04:00:00Z',
     updatedAt: '2026-10-05T13:40:00Z',
