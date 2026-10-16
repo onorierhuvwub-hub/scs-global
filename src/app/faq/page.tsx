@@ -22,7 +22,7 @@ export default function FAQPage() {
     },
     {
       q: 'Can I track a high-value shipment without exposing exact locations publicly?',
-      a: 'Yes. Public tracking shows approximate regional markers and masked valuations unless the viewer enters the sender-provided security passcode (e.g. VIP2026). Authorized accounts see exact live GPS telemetry.',
+      a: 'Yes. Public tracking shows approximate regional markers and masked valuations unless the viewer enters the sender-provided security passcode. Authorized accounts see exact live GPS telemetry.',
     },
     {
       q: 'How are diplomatic pouches and sovereign documents handled?',
