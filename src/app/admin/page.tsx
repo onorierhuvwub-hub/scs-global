@@ -96,7 +96,7 @@ export default function AdminPage() {
     fetch('/api/admin/session', { cache: 'no-store' })
       .then((response) => response.json())
       .then((result) => { if (active) setIsAuthenticated(result.authenticated === true); })
-      .catch(() => { if (active) setIsAuthenticated(false); });
+      .catch(() => { if (active) setIsAuthenticated(false); setLoginUsername(''); setLoginPassword(''); setLoginError(''); });
     return () => { active = false; };
   }, []);
 
@@ -147,7 +147,7 @@ export default function AdminPage() {
 
   async function handleAdminLogout() {
     await fetch('/api/admin/session', { method: 'DELETE' }).catch(() => undefined);
-    setIsAuthenticated(false);
+    setIsAuthenticated(false); setLoginUsername(''); setLoginPassword(''); setLoginError('');
   }
 
   async function handleRegisterShipment(e: React.FormEvent) {
@@ -293,7 +293,7 @@ export default function AdminPage() {
   if (!isAuthenticated) {
     return (
       <main className="max-w-lg mx-auto px-4 py-16">
-        <form onSubmit={handleAdminLogin} className="bg-slate-900 border border-slate-800 rounded-2xl p-8 shadow-2xl space-y-6 text-white">
+        <form autoComplete="off" onSubmit={handleAdminLogin} className="bg-slate-900 border border-slate-800 rounded-2xl p-8 shadow-2xl space-y-6 text-white">
           <div className="w-14 h-14 rounded-xl bg-amber-500/15 border border-amber-500/40 text-amber-400 flex items-center justify-center">
             <Lock className="w-7 h-7" />
           </div>
@@ -303,10 +303,10 @@ export default function AdminPage() {
             <p className="text-sm text-slate-400 mt-2">Enter your operations username and password to open the dashboard.</p>
           </div>
           <label className="block text-sm text-slate-300">Username
-            <input required autoComplete="username" value={loginUsername} onChange={(e) => setLoginUsername(e.target.value)} className="mt-1 w-full rounded-lg border border-slate-700 bg-slate-950 p-3 text-white" />
+            <input required name="ops-dashboard-user" autoComplete="off" value={loginUsername} onChange={(e) => setLoginUsername(e.target.value)} className="mt-1 w-full rounded-lg border border-slate-700 bg-slate-950 p-3 text-white" />
           </label>
           <label className="block text-sm text-slate-300">Password
-            <input required type="password" autoComplete="current-password" value={loginPassword} onChange={(e) => setLoginPassword(e.target.value)} className="mt-1 w-full rounded-lg border border-slate-700 bg-slate-950 p-3 text-white" />
+            <input required type="password" name="ops-dashboard-password" autoComplete="new-password" value={loginPassword} onChange={(e) => setLoginPassword(e.target.value)} className="mt-1 w-full rounded-lg border border-slate-700 bg-slate-950 p-3 text-white" />
           </label>
           {loginError && <p role="alert" className="text-sm text-rose-300">{loginError}</p>}
           <button type="submit" className="w-full rounded-lg bg-amber-500 p-3 font-bold text-slate-950">Sign in securely</button>
