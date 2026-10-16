@@ -97,7 +97,7 @@ function TrackPageContent() {
   function handleUnlockPasscode(e: React.FormEvent) {
     e.preventDefault();
     if (!activeShipment) return;
-    if (passcodeInput === activeShipment.passcode || passcodeInput === 'VIP2026' || passcodeInput === '1234') {
+    if (activeShipment.passcode && passcodeInput === activeShipment.passcode) {
       setUnlockedShipments((prev) => ({ ...prev, [activeShipment.trackingNumber]: true }));
       setPasscodeInput('');
       setPasscodeError('');
@@ -287,7 +287,7 @@ function TrackPageContent() {
                     PASSWORD-PROTECTED HIGH-VALUE SHIPMENT
                   </div>
                   <p className="text-[11px] text-amber-200/90">
-                    Sender details and declared valuation are masked. Enter Security Passcode to unlock sensitive manifest details. (Demo Passcode: <code className="font-bold">VIP2026</code>)
+                    Sender details and declared valuation are masked. Enter Security Passcode to unlock sensitive manifest details. 
                   </p>
                   <form onSubmit={handleUnlockPasscode} className="flex gap-2">
                     <input
