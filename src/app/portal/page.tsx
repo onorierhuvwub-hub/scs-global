@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useShipmentsStore, useGlobalSettings } from '@/lib/store';
-import { endCustomerSession, readCustomerSession, registerCustomerAccount, signInCustomer, type CustomerSession } from '@/lib/auth';
+import { endCustomerSession, isStrongCustomerPassword, readCustomerSession, registerCustomerAccount, signInCustomer, type CustomerSession } from '@/lib/auth';
 import { generateTrackingNumber, calculateQuote, formatCurrency } from '@/lib/tracking';
 import { Shipment, ServiceType, SecurityLevel } from '@/lib/types';
 import jsPDF from 'jspdf';
@@ -94,7 +94,7 @@ export default function CustomerPortalPage() {
   async function handleCustomerAuth(e: React.FormEvent) {
     e.preventDefault();
     setAuthError('');
-    const result = authMode === 'register'
+    if (authMode === 'register' && !isStrongCustomerPassword(authPassword)) { setAuthError('Use at least 12 characters, including uppercase, lowercase, and a number.'); return; } const result = authMode === 'register'
       ? await registerCustomerAccount(authName, authEmail, authPassword, shipments)
       : await signInCustomer(authEmail, authPassword);
     if (!result.ok) {
@@ -114,7 +114,7 @@ export default function CustomerPortalPage() {
 
   function handleCreateShipment(e: React.FormEvent) {
     e.preventDefault();
-    const trackingNum = generateTrackingNumber();
+    if (!portalSession || readCustomerSession()?.email !== portalSession.email) { handleCustomerLogout(); setAuthError('Your session expired. Please sign in again.'); return; } const trackingNum = generateTrackingNumber();
     const quote = calculateQuote({
       originCountry: 'Switzerland',
       destinationCountry: 'United States',
@@ -286,7 +286,7 @@ export default function CustomerPortalPage() {
             <input required type="email" autoComplete="off" value={authEmail} onChange={(e) => setAuthEmail(e.target.value)} className="mt-1 w-full rounded-lg border border-slate-700 bg-slate-950 p-3 text-white" />
           </label>
           <label className="block text-sm text-slate-300">Password
-            <input required type="password" minLength={8} autoComplete="off" value={authPassword} onChange={(e) => setAuthPassword(e.target.value)} className="mt-1 w-full rounded-lg border border-slate-700 bg-slate-950 p-3 text-white" />
+            <input required type="password" minLength={12} autoComplete="off" value={authPassword} onChange={(e) => setAuthPassword(e.target.value)} className="mt-1 w-full rounded-lg border border-slate-700 bg-slate-950 p-3 text-white" />
             {authMode === 'register' && <span className="block text-xs text-slate-500 mt-1">Use at least 8 characters.</span>}
           </label>
           {authError && <p role="alert" className="text-sm text-rose-300">{authError}</p>}
@@ -621,7 +621,7 @@ export default function CustomerPortalPage() {
                   <label className="block text-slate-300 font-semibold mb-1">Shipment Tracking Passcode</label>
                   <input
                     type="text"
-                    required minLength={8} autoComplete="new-password" value={passcode}
+                    required minLength={12} autoComplete="new-password" value={passcode}
                     onChange={(e) => setPasscode(e.target.value)}
                     className="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-white font-mono"
                     placeholder="Create a private passcode"
