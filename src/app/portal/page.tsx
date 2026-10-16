@@ -287,7 +287,7 @@ export default function CustomerPortalPage() {
           </label>
           <label className="block text-sm text-slate-300">Password
             <input required type="password" minLength={12} autoComplete="off" value={authPassword} onChange={(e) => setAuthPassword(e.target.value)} className="mt-1 w-full rounded-lg border border-slate-700 bg-slate-950 p-3 text-white" />
-            {authMode === 'register' && <span className="block text-xs text-slate-500 mt-1">Use at least 8 characters.</span>}
+            {authMode === 'register' && <span className="block text-xs text-slate-500 mt-1">Use 12+ characters with uppercase, lowercase, and a number.</span>}
           </label>
           {authError && <p role="alert" className="text-sm text-rose-300">{authError}</p>}
           {authMode === 'register' && !isLoaded && <p className="text-xs text-slate-400">Loading registered shipments…</p>}
