@@ -266,7 +266,7 @@ export default function CustomerPortalPage() {
   if (!isLoggedIn || !portalSession) {
     return (
       <main className="max-w-lg mx-auto px-4 py-14">
-        <form onSubmit={handleCustomerAuth} className="bg-slate-900 border border-slate-800 rounded-2xl p-8 shadow-2xl space-y-5 text-white">
+        <form autoComplete="off" onSubmit={handleCustomerAuth} className="bg-slate-900 border border-slate-800 rounded-2xl p-8 shadow-2xl space-y-5 text-white">
           <div className="w-14 h-14 rounded-xl bg-amber-500/15 border border-amber-500/40 text-amber-400 flex items-center justify-center">
             <ShieldCheck className="w-7 h-7" />
           </div>
@@ -283,10 +283,10 @@ export default function CustomerPortalPage() {
             </label>
           )}
           <label className="block text-sm text-slate-300">Email
-            <input required type="email" autoComplete="email" value={authEmail} onChange={(e) => setAuthEmail(e.target.value)} className="mt-1 w-full rounded-lg border border-slate-700 bg-slate-950 p-3 text-white" />
+            <input required type="email" autoComplete="off" value={authEmail} onChange={(e) => setAuthEmail(e.target.value)} className="mt-1 w-full rounded-lg border border-slate-700 bg-slate-950 p-3 text-white" />
           </label>
           <label className="block text-sm text-slate-300">Password
-            <input required type="password" minLength={8} autoComplete={authMode === 'login' ? 'current-password' : 'new-password'} value={authPassword} onChange={(e) => setAuthPassword(e.target.value)} className="mt-1 w-full rounded-lg border border-slate-700 bg-slate-950 p-3 text-white" />
+            <input required type="password" minLength={8} autoComplete="off" value={authPassword} onChange={(e) => setAuthPassword(e.target.value)} className="mt-1 w-full rounded-lg border border-slate-700 bg-slate-950 p-3 text-white" />
             {authMode === 'register' && <span className="block text-xs text-slate-500 mt-1">Use at least 8 characters.</span>}
           </label>
           {authError && <p role="alert" className="text-sm text-rose-300">{authError}</p>}
