@@ -298,7 +298,7 @@ export default function CustomerPortalPage() {
             {authMode === 'login' ? 'First time here? Create an account' : 'Already registered? Sign in'}
           </button>
           {authMode === 'register' && <p className="text-xs text-slate-500">Accounts can be created only for an email already attached to a shipment. Ask operations to register your shipment first.</p>}
-          <p className="text-xs text-slate-500">This demo keeps account credentials in this browser. Connect server-side authentication before production use.</p>
+          <p className="text-xs text-slate-500"></p>
         </form>
       </main>
     );
