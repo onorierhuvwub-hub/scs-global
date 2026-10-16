@@ -203,7 +203,7 @@ export default function CustomerPortalPage() {
     setCreatedSuccessTn(trackingNum);
   }
 
-  function handleBulkUpload(e: React.FormEvent) {
+  function handleBulkUpload(e: React.FormEvent) { if (!portalSession || readCustomerSession()?.email !== portalSession.email) { handleCustomerLogout(); setAuthError('Your session expired. Please sign in again.'); return; }
     e.preventDefault();
     const lines = csvText.trim().split('\n');
     let count = 0;
