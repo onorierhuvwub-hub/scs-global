@@ -110,6 +110,10 @@ export default function CustomerPortalPage() {
     setPortalSession(null);
     setIsLoggedIn(false);
     setActiveTab('dashboard');
+    setAuthName('');
+    setAuthEmail('');
+    setAuthPassword('');
+    setAuthError('');
   }
 
   function handleCreateShipment(e: React.FormEvent) {
@@ -283,10 +287,10 @@ export default function CustomerPortalPage() {
             </label>
           )}
           <label className="block text-sm text-slate-300">Email
-            <input required type="email" autoComplete="off" value={authEmail} onChange={(e) => setAuthEmail(e.target.value)} className="mt-1 w-full rounded-lg border border-slate-700 bg-slate-950 p-3 text-white" />
+            <input required type="email" name="client-portal-email" autoComplete="off" value={authEmail} onChange={(e) => setAuthEmail(e.target.value)} className="mt-1 w-full rounded-lg border border-slate-700 bg-slate-950 p-3 text-white" />
           </label>
           <label className="block text-sm text-slate-300">Password
-            <input required type="password" minLength={12} autoComplete="off" value={authPassword} onChange={(e) => setAuthPassword(e.target.value)} className="mt-1 w-full rounded-lg border border-slate-700 bg-slate-950 p-3 text-white" />
+            <input required type="password" name="client-portal-password" minLength={authMode === 'register' ? 12 : 1} autoComplete="new-password" value={authPassword} onChange={(e) => setAuthPassword(e.target.value)} className="mt-1 w-full rounded-lg border border-slate-700 bg-slate-950 p-3 text-white" />
             {authMode === 'register' && <span className="block text-xs text-slate-500 mt-1">Use 12+ characters with uppercase, lowercase, and a number.</span>}
           </label>
           {authError && <p role="alert" className="text-sm text-rose-300">{authError}</p>}
@@ -294,7 +298,7 @@ export default function CustomerPortalPage() {
           <button type="submit" disabled={authMode === 'register' && !isLoaded} className="w-full rounded-lg bg-amber-500 p-3 font-bold text-slate-950 disabled:opacity-50">
             {authMode === 'login' ? 'Sign in' : 'Create account'}
           </button>
-          <button type="button" onClick={() => { setAuthMode(authMode === 'login' ? 'register' : 'login'); setAuthError(''); }} className="w-full text-sm text-amber-300 hover:text-amber-200">
+          <button type="button" onClick={() => { setAuthMode(authMode === 'login' ? 'register' : 'login'); setAuthName(''); setAuthEmail(''); setAuthPassword(''); setAuthError(''); }} className="w-full text-sm text-amber-300 hover:text-amber-200">
             {authMode === 'login' ? 'First time here? Create an account' : 'Already registered? Sign in'}
           </button>
           {authMode === 'register' && <p className="text-xs text-slate-500">Accounts can be created only for an email already attached to a shipment. Ask operations to register your shipment first.</p>}
