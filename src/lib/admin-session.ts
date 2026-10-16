@@ -43,7 +43,7 @@ export function getAdminTokenFromCookieHeader(cookieHeader: string | null) {
   return pair ? decodeURIComponent(pair.slice(TOKEN_COOKIE.length + 1)) : undefined;
 }
 
-export function adminSessionCookie(token: string, maxAge = SESSION_TTL_SECONDS) {
+export function adminSessionCookie(token: string, maxAge?: number) {
   const secure = process.env.NODE_ENV === 'production' ? '; Secure' : '';
-  return `${TOKEN_COOKIE}=${encodeURIComponent(token)}; HttpOnly; Path=/; SameSite=Strict; Max-Age=${maxAge}${secure}`;
+  return `${TOKEN_COOKIE}=${encodeURIComponent(token)}; HttpOnly; Path=/; SameSite=Strict${maxAge === undefined ? '' : '; Max-Age=' + maxAge}${secure}`;
 }
